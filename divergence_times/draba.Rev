@@ -10,13 +10,13 @@
 #
 
 # base directory
-base_dir = ""
+#base_dir = ""
 
 # analysis id
-run_num = 1
+#run_num = 1
 
 # set the number of MCMC iterations
-n_iterations = 5000
+#n_iterations = 5000
 
 # set the number of iterations to sample from MCMC
 sample_freq = 1
@@ -25,10 +25,10 @@ sample_freq = 1
 
 
 # read in alignments
-filenames = ["data/ITS.fasta", 
-             "data/matK.fasta",
-             "data/rbcL.fasta",
-             "data/trnL-LF.fasta"]
+filenames = [base_dir + "data/ITS.fasta", 
+             base_dir + "data/matK.fasta",
+             base_dir + "data/rbcL.fasta",
+             base_dir + "data/trnL-LF.fasta"]
 
 n_partitions = filenames.size()
 
