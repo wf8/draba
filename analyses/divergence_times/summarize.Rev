@@ -1,0 +1,10 @@
+
+#
+# Script to summarize the posterior distribution of trees
+# by calculating the maximum a posteriori tree.
+#
+# author: Will Freyman
+#
+
+trace = readTreeTrace(file="output/combined.trees", burnin=0.0)
+mapTree(trace=trace, file="output/map.tree")

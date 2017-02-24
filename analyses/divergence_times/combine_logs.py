@@ -4,12 +4,14 @@ import csv
 import itertools
 import operator
 
-burnin = 100 # per trace
+burnin = 500 # per trace
+thin = 5 # thinning interval
 sample_freq = 1 # number of iterations per sample
 n_runs = 20 # number of MCMC runs to combine
 
 print("Combining parameter traces...")
 
+t = 0
 final_csv = []
 gen = 0
 header_done = False
@@ -25,14 +27,17 @@ for log in range(1, n_runs + 1):
                     final_csv.append(row)
                     header_done = True
                 elif j - 1 - lines_to_skip > burnin:
-                    final_row = []
-                    for i, column in enumerate(row):
-                        if i == 0:
-                            final_row.append(gen)
-                            gen += sample_freq
-                        else:
-                            final_row.append(column)
-                    final_csv.append(final_row)
+                    t += 1
+                    if t == thin:
+                        t = 0
+                        final_row = []
+                        for i, column in enumerate(row):
+                            if i == 0:
+                                final_row.append(gen)
+                                gen += sample_freq
+                            else:
+                                final_row.append(column)
+                        final_csv.append(final_row)
 
 with open("output/combined.log", "wb") as csvfile:
     csvwriter = csv.writer(csvfile, delimiter="\t")
@@ -41,6 +46,7 @@ with open("output/combined.log", "wb") as csvfile:
 
 print("Combining tree files...")
 
+t = 0
 final_csv = []
 gen = 0
 header_done = False
@@ -56,14 +62,17 @@ for log in range(1, n_runs + 1):
                     final_csv.append(row)
                     header_done = True
                 elif j - 1 - lines_to_skip > burnin:
-                    final_row = []
-                    for i, column in enumerate(row):
-                        if i == 0:
-                            final_row.append(gen)
-                            gen += sample_freq
-                        else:
-                            final_row.append(column)
-                    final_csv.append(final_row)
+                    t += 1
+                    if t == thin:
+                        t = 0
+                        final_row = []
+                        for i, column in enumerate(row):
+                            if i == 0:
+                                final_row.append(gen)
+                                gen += sample_freq
+                            else:
+                                final_row.append(column)
+                        final_csv.append(final_row)
 
 with open("output/combined.trees", "wb") as csvfile:
     csvwriter = csv.writer(csvfile, delimiter="\t")

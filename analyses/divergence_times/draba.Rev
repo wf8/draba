@@ -67,7 +67,8 @@ for (i in 1:n_partitions) {
     alpha_prior[i] <- 1.0
     alpha[i] ~ dnExponential( alpha_prior[i] )
     gamma_rates[i] := fnDiscretizeGamma( alpha[i], alpha[i], 4, false )
-    moves[++mi] = mvScale(alpha[i], lambda=0.1, weight=5)
+    moves[++mi] = mvScale(alpha[i], lambda=0.1, weight=2.5)
+    moves[++mi] = mvScale(alpha[i], lambda=2.0, weight=2.5)
 
 }
 
@@ -89,16 +90,16 @@ moves[++mi] = mvSlide(root_time, delta=10.0, weight=5)
 
 # setup outgroup clade
 outgroup_taxa = [
-        "Abdra aprica",
-        "Abdra brachycarpa",
-        "Athysanus pusillus",
-        "Heterodraba unilateralis",
-        "Tomostima araboides",
-        "Tomostima australis",
-        "Tomostima cuneifolia",
-        "Tomostima platycarpa",
-        "Tomostima sonorae",
-        "Tomostima reptans"]
+        "Abdra_aprica",
+        "Abdra_brachycarpa",
+        "Athysanus_pusillus",
+        "Heterodraba_unilateralis",
+        "Tomostima_araboides",
+        "Tomostima_australis",
+        "Tomostima_cuneifolia",
+        "Tomostima_platycarpa",
+        "Tomostima_sonorae",
+        "Tomostima_reptans"]
 
 outgroup_clade = clade(outgroup_taxa)
 
@@ -133,12 +134,12 @@ constraints = [outgroup_clade, ingroup_clade]
 diversification_mean <- ln( ln(n_species/2.0) / 8.815 )
 diversification_sd <- 0.587405 * 2
 diversification ~ dnLognormal(mean=diversification_mean, sd=diversification_sd)
-moves[++mi] = mvScale(diversification, lambda=1.0, tune=true, weight=3.0)
+moves[++mi] = mvScale(diversification, lambda=1.0, tune=true, weight=10.0)
 
 extinction_mean <- ln( ln(n_species/2.0) / 8.815 )
 extinction_sd <- 0.587405 * 2
 extinction ~ dnLognormal(mean=extinction_mean, sd=extinction_sd)
-moves[++mi] = mvScale(extinction, lambda=1.0, tune=true, weight=3.0)
+moves[++mi] = mvScale(extinction, lambda=1.0, tune=true, weight=10.0)
 
 # diversification = speciation - extinction
 speciation := diversification + extinction
@@ -173,12 +174,13 @@ NUM_RATE_CATEGORIES = 10
 
 ucln_mean ~ dnUnif(1E-6, 10)
 ucln_log_mean := ln( ucln_mean )
-ucln_sigma ~ dnExponential(10.0)
+#ucln_sigma ~ dnExponential(10.0)
+ucln_sigma <- 0.587405 * 2
 
 moves[++mi] = mvScale(ucln_mean, lambda=0.5, weight=5.0)
-moves[++mi] = mvScale(ucln_sigma, lambda=0.5, weight=5.0)
+#moves[++mi] = mvScale(ucln_sigma, lambda=0.5, weight=5.0)
 moves[++mi] = mvScale(ucln_mean, lambda=5.0, weight=5.0)
-moves[++mi] = mvScale(ucln_sigma, lambda=5.0, weight=5.0)
+#moves[++mi] = mvScale(ucln_sigma, lambda=5.0, weight=5.0)
 
 up_down_scale_tree = mvUpDownScale(lambda=1.0, weight=20)
 up_down_scale_tree.addVariable( timetree, TRUE )

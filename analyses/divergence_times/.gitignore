@@ -1,3 +1,4 @@
 output/
 runs/
 *.out
+history.txt
