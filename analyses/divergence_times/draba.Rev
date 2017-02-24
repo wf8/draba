@@ -25,10 +25,10 @@ sample_freq = 1
 
 
 # read in alignments
-filenames = [base_dir + "data/ITS.fasta", 
-             base_dir + "data/matK.fasta",
-             base_dir + "data/rbcL.fasta",
-             base_dir + "data/trnL-LF.fasta"]
+filenames = ["data/ITS.fasta", 
+             "data/matK.fasta",
+             "data/rbcL.fasta",
+             "data/trnL-LF.fasta"]
 
 n_partitions = filenames.size()
 
