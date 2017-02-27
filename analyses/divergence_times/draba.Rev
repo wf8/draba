@@ -19,7 +19,7 @@
 #n_iterations = 5000
 
 # set the number of iterations to sample from MCMC
-sample_freq = 1
+#sample_freq = 1
 
 
 
@@ -81,7 +81,7 @@ for (i in 1:n_partitions) {
 # split between Draba and outgroup between 4.73 - 12.9
 # outgroup = Tomostima, Abdra, Heterodraba, and Athysanus
 root_time ~ dnUnif(4.73, 12.9)
-
+root_time.setValue(7.7)
 # add moves for root time
 moves[++mi] = mvSlide(root_time, delta=1.0, weight=5)
 moves[++mi] = mvSlide(root_time, delta=10.0, weight=5)
@@ -134,11 +134,13 @@ constraints = [outgroup_clade, ingroup_clade]
 diversification_mean <- ln( ln(n_species/2.0) / 8.815 )
 diversification_sd <- 0.587405 * 2
 diversification ~ dnLognormal(mean=diversification_mean, sd=diversification_sd)
+diversification.setValue(0.9)
 moves[++mi] = mvScale(diversification, lambda=1.0, tune=true, weight=10.0)
 
 extinction_mean <- ln( ln(n_species/2.0) / 8.815 )
 extinction_sd <- 0.587405 * 2
 extinction ~ dnLognormal(mean=extinction_mean, sd=extinction_sd)
+extinction.setValue(0.26)
 moves[++mi] = mvScale(extinction, lambda=1.0, tune=true, weight=10.0)
 
 # diversification = speciation - extinction
@@ -173,19 +175,23 @@ ingroup_age := tmrca(timetree, ingroup_clade)
 NUM_RATE_CATEGORIES = 10
 
 ucln_mean ~ dnUnif(1E-6, 10)
+ucln_mean.setValue(0.015)
 ucln_log_mean := ln( ucln_mean )
 #ucln_sigma ~ dnExponential(10.0)
 ucln_sigma <- 0.587405 * 2
 
 moves[++mi] = mvScale(ucln_mean, lambda=0.5, weight=5.0)
-#moves[++mi] = mvScale(ucln_sigma, lambda=0.5, weight=5.0)
+moves[++mi] = mvScale(ucln_mean, lambda=1.0, weight=10.0)
 moves[++mi] = mvScale(ucln_mean, lambda=5.0, weight=5.0)
+#moves[++mi] = mvScale(ucln_sigma, lambda=0.5, weight=5.0)
 #moves[++mi] = mvScale(ucln_sigma, lambda=5.0, weight=5.0)
 
 up_down_scale_tree = mvUpDownScale(lambda=1.0, weight=20)
 up_down_scale_tree.addVariable( timetree, TRUE )
 up_down_scale_tree.addVariable( root_time, TRUE )
 up_down_scale_tree.addVariable( ucln_mean, FALSE )
+up_down_scale_tree.addVariable( diversification, FALSE )
+up_down_scale_tree.addVariable( extinction, FALSE )
 moves[++mi] = up_down_scale_tree
 
 # use a discretized lognormal
@@ -195,7 +201,7 @@ for (j in 1:n_branches) {
 
     # for each branch pull from one of the rate categories
     branch_rates[j] ~ dnMixture(rate_categories, rate_probs)
-    moves[++mi] = mvMixtureAllocation(branch_rates[j], weight=2.0)
+    moves[++mi] = mvMixtureAllocation(branch_rates[j], weight=4.0)
 
 }
 
