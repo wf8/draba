@@ -6,5 +6,8 @@
 # author: Will Freyman
 #
 
-trace = readTreeTrace(file="output/combined.trees", burnin=0.0)
-mapTree(trace=trace, file="output/map.tree")
+prefix = ""
+#prefix = "nuclear"
+#prefix = "chloroplast"
+trace = readTreeTrace(file="output/combined" + prefix + ".trees", burnin=0.0)
+mapTree(trace=trace, file="output/map" + prefix + ".tree")

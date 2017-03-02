@@ -8,6 +8,9 @@ burnin = 500 # per trace
 thin = 5 # thinning interval
 sample_freq = 1 # number of iterations per sample
 n_runs = 20 # number of MCMC runs to combine
+#prefix = "nuclear"
+#prefix = "chloroplast"
+prefix = ""
 
 print("Combining parameter traces...")
 
@@ -16,7 +19,7 @@ final_csv = []
 gen = 0
 header_done = False
 for log in range(1, n_runs + 1):
-    with open("output/" + str(log) + ".log", 'r') as csvfile:
+    with open("output/" + prefix + str(log) + ".log", 'r') as csvfile:
         lines_to_skip = 0
         csvreader = csv.reader(csvfile, delimiter="\t")
         for j, row in enumerate(csvreader):
@@ -39,7 +42,7 @@ for log in range(1, n_runs + 1):
                                 final_row.append(column)
                         final_csv.append(final_row)
 
-with open("output/combined.log", "wb") as csvfile:
+with open("output/combined" + prefix + ".log", "wb") as csvfile:
     csvwriter = csv.writer(csvfile, delimiter="\t")
     for row in final_csv:
         csvwriter.writerow(row)
@@ -51,7 +54,7 @@ final_csv = []
 gen = 0
 header_done = False
 for log in range(1, n_runs + 1):
-    with open("output/" + str(log) + ".trees", 'r') as csvfile:
+    with open("output/" + prefix + str(log) + ".trees", 'r') as csvfile:
         lines_to_skip = 0
         csvreader = csv.reader(csvfile, delimiter="\t")
         for j, row in enumerate(csvreader):
@@ -74,7 +77,7 @@ for log in range(1, n_runs + 1):
                                 final_row.append(column)
                         final_csv.append(final_row)
 
-with open("output/combined.trees", "wb") as csvfile:
+with open("output/combined" + prefix + ".trees", "wb") as csvfile:
     csvwriter = csv.writer(csvfile, delimiter="\t")
     for row in final_csv:
         csvwriter.writerow(row)
