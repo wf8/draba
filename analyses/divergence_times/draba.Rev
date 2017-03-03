@@ -86,43 +86,43 @@ root_time.setValue(7.7)
 moves[++mi] = mvSlide(root_time, delta=1.0, weight=5)
 moves[++mi] = mvSlide(root_time, delta=10.0, weight=5)
 
-# topology constraints:
-
-# setup outgroup clade
-outgroup_taxa = [
-        "Abdra_aprica",
-        "Abdra_brachycarpa",
-        "Athysanus_pusillus",
-        "Heterodraba_unilateralis",
-        "Tomostima_araboides",
-        "Tomostima_australis",
-        "Tomostima_cuneifolia",
-        "Tomostima_platycarpa",
-        "Tomostima_sonorae",
-        "Tomostima_reptans"]
-
-outgroup_clade = clade(outgroup_taxa)
-
-# setup ingroup clade
-k = 1
-for (i in 1:taxa.size()) {
-    found = false
-    for (j in 1:outgroup_taxa.size()) {
-        if (taxa[i].getSpeciesName() == outgroup_taxa[j]) {
-            found = true
-            break
-        }
-    }
-    if (!found) {
-        ingroup_taxa[k] = taxa[i].getSpeciesName()
-        k += 1
-    }
-}
-ingroup_clade = clade(ingroup_taxa)
-
-
-# load the constraints into a vector for the BDP model
-constraints = [outgroup_clade, ingroup_clade]
+## topology constraints:
+#
+## setup outgroup clade
+#outgroup_taxa = [
+#        "Abdra_aprica",
+#        "Abdra_brachycarpa",
+#        "Athysanus_pusillus",
+#        "Heterodraba_unilateralis",
+#        "Tomostima_araboides",
+#        "Tomostima_australis",
+#        "Tomostima_cuneifolia",
+#        "Tomostima_platycarpa",
+#        "Tomostima_sonorae",
+#        "Tomostima_reptans"]
+#
+#outgroup_clade = clade(outgroup_taxa)
+#
+## setup ingroup clade
+#k = 1
+#for (i in 1:taxa.size()) {
+#    found = false
+#    for (j in 1:outgroup_taxa.size()) {
+#        if (taxa[i].getSpeciesName() == outgroup_taxa[j]) {
+#            found = true
+#            break
+#        }
+#    }
+#    if (!found) {
+#        ingroup_taxa[k] = taxa[i].getSpeciesName()
+#        k += 1
+#    }
+#}
+#ingroup_clade = clade(ingroup_taxa)
+#
+#
+## load the constraints into a vector for the BDP model
+#constraints = [outgroup_clade, ingroup_clade]
 
 
 ####### tree model
@@ -151,8 +151,9 @@ speciation := diversification + extinction
 # we have 298 tips in our sample. so rho = 298/370 ~ 0.81
 
 # the time tree is a stochastic node modeled by the constant rate birth-death process 
-bdp = dnBDP(lambda=speciation, mu=extinction, rho=0.81, rootAge=abs(root_time), taxa=taxa)
-timetree ~ dnConstrainedTopology(treeDistribution=bdp, constraints)
+#bdp = dnBDP(lambda=speciation, mu=extinction, rho=0.81, rootAge=abs(root_time), taxa=taxa)
+#timetree ~ dnConstrainedTopology(treeDistribution=bdp, constraints)
+timetree ~ dnBDP(lambda=speciation, mu=extinction, rho=0.81, rootAge=abs(root_time), taxa=taxa)
 
 # add moves on the tree node times
 moves[++mi] = mvNodeTimeSlideUniform(timetree, weight=20)
@@ -166,8 +167,8 @@ moves[++mi] = mvNarrow(timetree, weight=30)
 moves[++mi] = mvFNPR(timetree, weight=30)
 moves[++mi] = mvGPR(timetree, weight=30)
 
-outgroup_age := tmrca(timetree, outgroup_clade)
-ingroup_age := tmrca(timetree, ingroup_clade)
+#outgroup_age := tmrca(timetree, outgroup_clade)
+#ingroup_age := tmrca(timetree, ingroup_clade)
 
 
 # UCLN model on branch rates
@@ -210,7 +211,8 @@ mean_rt := mean(branch_rates)
 # base rates for each partition
 br_prior <- rep(1, n_partitions)
 br ~ dnDirichlet(br_prior)
-moves[++mi] = mvSimplexElementScale(br, alpha=0.1, weight=10)
+moves[++mi] = mvSimplexElementScale(br, alpha=0.1, weight=5)
+moves[++mi] = mvSimplexElementScale(br, alpha=1.0, weight=5)
 
 for (i in 1:n_partitions) {
 
@@ -229,7 +231,7 @@ mymodel = model(timetree)
 
 ### set up the monitors that will output parameter values to file and screen
 monitors[1] = mnFile(filename=base_dir + "output/" + run_num + ".trees", printgen=sample_freq, timetree)
-monitors[2] = mnScreen(printgen=1, root_time, mean_rt, extinction, speciation, outgroup_age, ingroup_age)
+monitors[2] = mnScreen(printgen=1, root_time, mean_rt, extinction, speciation) #, outgroup_age, ingroup_age)
 monitors[3] = mnModel(filename=base_dir + "output/" + run_num + ".log", printgen=sample_freq)
 
 ### workspace mcmc ###

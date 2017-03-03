@@ -14,8 +14,8 @@ do
     
     echo "base_dir = \"/global/scratch/freyman/projects/draba/analyses/divergence_times/\"" >> runs/$rep.Rev
     echo "run_num = $rep" >> runs/$rep.Rev
-    echo "n_iterations = 2000" >> runs/$rep.Rev
-    echo "sample_freq = 2" >> runs/$rep.Rev
+    echo "n_iterations = 1000" >> runs/$rep.Rev
+    echo "sample_freq = 1" >> runs/$rep.Rev
     echo "seed($rep)" >> runs/$rep.Rev
     cat draba.Rev >> runs/$rep.Rev
     
@@ -24,7 +24,7 @@ done
 
 echo "#!/bin/bash
 # Job name:
-#SBATCH --job-name=draba
+#SBATCH --job-name=draba-all
 #
 # Partition:
 #SBATCH --partition=savio
