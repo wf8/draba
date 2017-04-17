@@ -1,0 +1,299 @@
+
+#
+# Script to estimate divergence times of Draba 
+# using discretized UCLN model with secondary
+# root calibration from Karl and Koch 2013 and
+# 4 gene regions with separate GTR+G for each 
+# partition.
+#
+# author: Will Freyman
+#
+
+# base directory
+#base_dir = ""
+
+# analysis id
+#run_num = 1
+
+# set the number of MCMC iterations
+#n_iterations = 5000
+
+# set the number of iterations to sample from MCMC
+#sample_freq = 1
+
+
+
+
+# read in alignments
+filenames = ["data/ITS.fasta", 
+             "data/final_fluidigm_data_fasta/intron11.fasta",
+             "data/final_fluidigm_data_fasta/intron13.fasta",
+             "data/final_fluidigm_data_fasta/intron14.fasta",
+             "data/final_fluidigm_data_fasta/intron15.fasta",
+             "data/final_fluidigm_data_fasta/intron16.fasta",
+             "data/final_fluidigm_data_fasta/intron17.fasta",
+             "data/final_fluidigm_data_fasta/intron19.fasta",
+             "data/final_fluidigm_data_fasta/intron1.fasta",
+             "data/final_fluidigm_data_fasta/intron20.fasta",
+             "data/final_fluidigm_data_fasta/intron21.fasta",
+             "data/final_fluidigm_data_fasta/intron22.fasta",
+             "data/final_fluidigm_data_fasta/intron23.fasta",
+             "data/final_fluidigm_data_fasta/intron25.fasta",
+             "data/final_fluidigm_data_fasta/intron27.fasta",
+             "data/final_fluidigm_data_fasta/intron29.fasta",
+             "data/final_fluidigm_data_fasta/intron2.fasta",
+             "data/final_fluidigm_data_fasta/intron30.fasta",
+             "data/final_fluidigm_data_fasta/intron33.fasta",
+             "data/final_fluidigm_data_fasta/intron34.fasta",
+             "data/final_fluidigm_data_fasta/intron35.fasta",
+             "data/final_fluidigm_data_fasta/intron36.fasta",
+             "data/final_fluidigm_data_fasta/intron38.fasta",
+             "data/final_fluidigm_data_fasta/intron39.fasta",
+             "data/final_fluidigm_data_fasta/intron3.fasta",
+             "data/final_fluidigm_data_fasta/intron40.fasta",
+             "data/final_fluidigm_data_fasta/intron41.fasta",
+             "data/final_fluidigm_data_fasta/intron42.fasta",
+             "data/final_fluidigm_data_fasta/intron43.fasta",
+             "data/final_fluidigm_data_fasta/intron44.fasta",
+             "data/final_fluidigm_data_fasta/intron45.fasta",
+             "data/final_fluidigm_data_fasta/intron46.fasta",
+             "data/final_fluidigm_data_fasta/intron47.fasta",
+             "data/final_fluidigm_data_fasta/intron4.fasta",
+             "data/final_fluidigm_data_fasta/intron5.fasta",
+             "data/final_fluidigm_data_fasta/intron7.fasta",
+             "data/final_fluidigm_data_fasta/intron9.fasta"]
+
+n_partitions = filenames.size()
+
+# set up gene partitions
+for (i in 1:n_partitions) {
+    data[i] = readDiscreteCharacterData(base_dir + filenames[i])
+    n_sites[i] <- data[i].nchar()
+}
+
+# get variables from alignments
+n_species = data[2].ntaxa()
+taxa = data[2].taxa()
+n_branches = 2 * n_species - 2
+
+# set up an index for our MCMC moves
+mi = 0
+
+data[1].addMissingTaxa(taxa)
+
+# substition models
+
+for (i in 1:n_partitions) {
+    
+    # specify the GTR+Gamma substitution model for each partition 
+    er_prior[i] <- rep(1, 6)
+    er[i] ~ dnDirichlet(er_prior[i])
+    moves[++mi] = mvSimplexElementScale(er[i], alpha=0.1, weight=5)
+
+    sf_prior[i] <- rep(1, 4)
+    sf[i] ~ dnDirichlet(sf_prior[i])
+    moves[++mi] = mvSimplexElementScale(sf[i], alpha=0.1, weight=5)
+
+    # rate matrix for this partition
+    Q[i] := fnGTR(er[i], sf[i])
+
+    # add among site rate variation
+    alpha_prior[i] <- 1.0
+    alpha[i] ~ dnExponential( alpha_prior[i] )
+    gamma_rates[i] := fnDiscretizeGamma( alpha[i], alpha[i], 4, false )
+    moves[++mi] = mvScale(alpha[i], lambda=0.1, weight=2.5)
+    moves[++mi] = mvScale(alpha[i], lambda=2.0, weight=2.5)
+
+}
+
+
+
+
+# root calibration point
+
+# from 
+# Hohmann N Wolf EM Lysak MA Koch MA . 2015 . A time-calibrated road map of Brassicaceae species radiation and evolutionary history . Plant Cell  . doi:10.1105/tpc.15.00482 .
+
+# crown age of Brassicaceae is ~32 Ma at the 
+# split between core Brassicaceae and tribe Aethionemeae
+#
+# crown age of core Brassicaceae is ~23.34 Ma
+expected_tree_age <- 23.34
+root_time ~ dnNormal(mean=expected_tree_age, sd=1.5)
+root_time.setValue(expected_tree_age)
+
+# add moves for root time
+moves[++mi] = mvSlide(root_time, delta=1.0, weight=5)
+moves[++mi] = mvSlide(root_time, delta=10.0, weight=5)
+
+
+## topology constraints:
+
+use_constraints = false
+
+if (use_constraints) {
+
+    # setup outgroup clade
+    outgroup_taxa = [
+            "Abdra_aprica",
+            "Abdra_brachycarpa",
+            "Athysanus_pusillus",
+            "Heterodraba_unilateralis",
+            "Tomostima_araboides",
+            "Tomostima_australis",
+            "Tomostima_cuneifolia",
+            "Tomostima_platycarpa",
+            "Tomostima_sonorae",
+            "Tomostima_reptans"]
+    
+    outgroup_clade = clade(outgroup_taxa)
+    
+    # setup ingroup clade
+    k = 1
+    for (i in 1:taxa.size()) {
+        found = false
+        for (j in 1:outgroup_taxa.size()) {
+            if (taxa[i].getSpeciesName() == outgroup_taxa[j]) {
+                found = true
+                break
+            }
+        }
+        if (!found) {
+            ingroup_taxa[k] = taxa[i].getSpeciesName()
+            k += 1
+        }
+    }
+    ingroup_clade = clade(ingroup_taxa)
+    
+    
+    # load the constraints into a vector for the BDP model
+    constraints = [outgroup_clade, ingroup_clade]
+
+}
+
+####### tree model
+
+# set up the parameters for the constant rate birth-death process
+
+
+# the birth rate is a stochastic random variable drawn from a lognormal prior
+diversification_mean <- ln( ln(n_species/2.0) / expected_tree_age )
+diversification_sd <- 0.587405 * 2
+diversification ~ dnLognormal(mean=diversification_mean, sd=diversification_sd)
+diversification.setValue(0.9)
+moves[++mi] = mvScale(diversification, lambda=1.0, tune=true, weight=10.0)
+
+extinction_mean <- ln( ln(n_species/2.0) / expected_tree_age )
+extinction_sd <- 0.587405 * 2
+extinction ~ dnLognormal(mean=extinction_mean, sd=extinction_sd)
+extinction.setValue(0.26)
+moves[++mi] = mvScale(extinction, lambda=1.0, tune=true, weight=10.0)
+
+# diversification = speciation - extinction
+speciation := diversification + extinction
+
+# the probability of sampling species at the present:
+
+# the number of species in Brassicaceae is 3740
+# Al-Shehbaz, I.A. (2012). A generic and tribal synopsis of the Brassicaceae (Cruciferae). Taxon 61: 931–954
+
+# the number of species in Tribe Aethionemeae is 132
+# Kiefer M, Schmickl R, German DA, Lysak M, Al-Shehbaz IA, Franzke A, Mummenhoff K, Stamatakis A, Koch MA. 2014. BrassiBase: Introdcution to a novel database on Brassicaceae evolution. Plant Cell Physiol., 55(1): e3, doi:10.1093/pcp/pct158.
+
+# we have 38 samples so
+# 3740 - 132 = 3608
+# rho = 38 / 3608 = 0.012
+
+# the time tree is a stochastic node modeled by the constant rate birth-death process 
+if (use_constraints) {
+    bdp = dnBDP(lambda=speciation, mu=extinction, rho=0.012, rootAge=abs(root_time), taxa=taxa)
+    timetree ~ dnConstrainedTopology(treeDistribution=bdp, constraints)
+} else {
+    timetree ~ dnBDP(lambda=speciation, mu=extinction, rho=0.012, rootAge=abs(root_time), taxa=taxa)
+}
+
+# add moves on the tree node times
+moves[++mi] = mvNodeTimeSlideUniform(timetree, weight=20)
+moves[++mi] = mvNodeTimeScale(timetree, lambda=0.1, weight=10)
+moves[++mi] = mvNodeTimeScale(timetree, lambda=5.0, weight=10)
+moves[++mi] = mvSubtreeScale(timetree, weight=20)
+
+# and moves for the tree topology
+moves[++mi] = mvNNI(timetree, weight=30)
+moves[++mi] = mvNarrow(timetree, weight=30)
+moves[++mi] = mvFNPR(timetree, weight=30)
+moves[++mi] = mvGPR(timetree, weight=30)
+
+if (use_constraints) {
+    outgroup_age := tmrca(timetree, outgroup_clade)
+    ingroup_age := tmrca(timetree, ingroup_clade)
+}
+
+# UCLN model on branch rates
+
+NUM_RATE_CATEGORIES = 10
+
+ucln_mean ~ dnUnif(1E-6, 10)
+ucln_mean.setValue(0.015)
+ucln_log_mean := ln( ucln_mean )
+ucln_sigma <- 0.587405 * 2
+
+moves[++mi] = mvScale(ucln_mean, lambda=0.5, weight=5.0)
+moves[++mi] = mvScale(ucln_mean, lambda=1.0, weight=10.0)
+moves[++mi] = mvScale(ucln_mean, lambda=5.0, weight=5.0)
+
+up_down_scale_tree = mvUpDownScale(lambda=1.0, weight=20)
+up_down_scale_tree.addVariable( timetree, TRUE )
+up_down_scale_tree.addVariable( root_time, TRUE )
+up_down_scale_tree.addVariable( ucln_mean, FALSE )
+up_down_scale_tree.addVariable( diversification, FALSE )
+up_down_scale_tree.addVariable( extinction, FALSE )
+moves[++mi] = up_down_scale_tree
+
+# use a discretized lognormal
+rate_categories := fnDiscretizeDistribution(dnLnorm(ucln_log_mean, ucln_sigma), NUM_RATE_CATEGORIES)
+rate_probs <- simplex(rep(1, NUM_RATE_CATEGORIES))
+for (j in 1:n_branches) {
+
+    # for each branch pull from one of the rate categories
+    branch_rates[j] ~ dnMixture(rate_categories, rate_probs)
+    moves[++mi] = mvMixtureAllocation(branch_rates[j], weight=4.0)
+
+}
+
+mean_rt := mean(branch_rates)
+
+# base rates for each partition
+br_prior <- rep(1, n_partitions)
+br ~ dnDirichlet(br_prior)
+moves[++mi] = mvSimplexElementScale(br, alpha=0.1, weight=5)
+moves[++mi] = mvSimplexElementScale(br, alpha=1.0, weight=5)
+
+for (i in 1:n_partitions) {
+
+    branch_subrates[i] := branch_rates * br[i]
+    
+    ### the full phylogenetic CTMC
+    seq[i] ~ dnPhyloCTMC(tree=timetree, Q=Q[i], branchRates=branch_subrates[i], nSites=n_sites[i], siteRates=gamma_rates[i], type="DNA")
+
+    ### attach the observed sequence data
+    seq[i].clamp(data[i])
+
+}
+
+### finish model
+mymodel = model(timetree)
+
+### set up the monitors that will output parameter values to file and screen
+monitors[1] = mnFile(filename=base_dir + "output/" + run_num + ".trees", printgen=sample_freq, timetree)
+monitors[2] = mnScreen(printgen=1, root_time, mean_rt, extinction, speciation) #, outgroup_age, ingroup_age)
+monitors[3] = mnModel(filename=base_dir + "output/" + run_num + ".log", printgen=sample_freq)
+
+### workspace mcmc ###
+mymcmc = mcmc(mymodel, monitors, moves)
+
+### run the MCMC ###
+mymcmc.run(generations=n_iterations)
+
+q()
+
