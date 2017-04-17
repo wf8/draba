@@ -6,13 +6,13 @@ mkdir runs
 for rep in {1..20}
 do
 
-    # base_dir = "/global/scratch/freyman/projects/draba/analyses/divergence_times_fluidigm/"
+    # base_dir = "/global/scratch/freyman/projects/draba/divergence_times_fluidigm/"
     # run_num = 1
     # n_iterations = 1000
     # sample_freq = 1
     # seed(1) 
     
-    echo "base_dir = \"/global/scratch/freyman/projects/draba/analyses/divergence_times_fluidigm/\"" >> runs/$rep.Rev
+    echo "base_dir = \"/global/scratch/freyman/projects/draba/divergence_times_fluidigm/\"" >> runs/$rep.Rev
     echo "run_num = $rep" >> runs/$rep.Rev
     echo "n_iterations = 1000" >> runs/$rep.Rev
     echo "sample_freq = 1" >> runs/$rep.Rev
@@ -45,7 +45,7 @@ echo "#!/bin/bash
 #" > runs/draba.sh
 for core in {1..20}
 do
-    echo "/global/scratch/freyman/revbayes/projects/cmake/rb /global/scratch/freyman/projects/draba/analyses/divergence_times_fluidigm/runs/$core.Rev > /global/scratch/freyman/projects/draba/analyses/divergence_times_fluidigm/output/$core.out &" >> runs/draba.sh
+    echo "/global/scratch/freyman/revbayes/projects/cmake/rb /global/scratch/freyman/projects/draba/divergence_times_fluidigm/runs/$core.Rev > /global/scratch/freyman/projects/draba/divergence_times_fluidigm/output/$core.out &" >> runs/draba.sh
 done
 echo "wait" >> runs/draba.sh
 
