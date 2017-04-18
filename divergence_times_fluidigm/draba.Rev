@@ -9,18 +9,21 @@
 # author: Will Freyman
 #
 
-# base directory
-#base_dir = ""
+test = false
+if (test) {
 
-# analysis id
-#run_num = 1
+    # base directory
+    base_dir = ""
 
-# set the number of MCMC iterations
-#n_iterations = 5000
+    # analysis id
+    run_num = 1
 
-# set the number of iterations to sample from MCMC
-#sample_freq = 1
+    # set the number of MCMC iterations
+    n_iterations = 5000
 
+    # set the number of iterations to sample from MCMC
+    sample_freq = 1
+}
 
 
 
@@ -102,6 +105,7 @@ for (i in 1:n_partitions) {
     alpha[i] ~ dnExponential( alpha_prior[i] )
     gamma_rates[i] := fnDiscretizeGamma( alpha[i], alpha[i], 4, false )
     moves[++mi] = mvScale(alpha[i], lambda=0.1, weight=2.5)
+    moves[++mi] = mvScale(alpha[i], lambda=0.5, weight=3)
     moves[++mi] = mvScale(alpha[i], lambda=2.0, weight=2.5)
 
 }
@@ -129,24 +133,14 @@ moves[++mi] = mvSlide(root_time, delta=10.0, weight=5)
 
 ## topology constraints:
 
-use_constraints = false
+use_constraints = true
 
 if (use_constraints) {
 
     # setup outgroup clade
     outgroup_taxa = [
-            "Abdra_aprica",
-            "Abdra_brachycarpa",
-            "Athysanus_pusillus",
-            "Heterodraba_unilateralis",
-            "Tomostima_araboides",
-            "Tomostima_australis",
-            "Tomostima_cuneifolia",
-            "Tomostima_platycarpa",
-            "Tomostima_sonorae",
-            "Tomostima_reptans"]
-    
-    outgroup_clade = clade(outgroup_taxa)
+            "Arabidopsis7_control",
+            "Noccaea_fendleri_Idahoensis_IEJT266_out"]
     
     # setup ingroup clade
     k = 1
@@ -163,11 +157,17 @@ if (use_constraints) {
             k += 1
         }
     }
-    ingroup_clade = clade(ingroup_taxa)
+    ingroup_clade = clade(ingroup_taxa, age=6.0)
     
+    # made a clade for D ramosissima for easy monitoring
+    ramo_taxa = ["Dra_1000_D_ramosissima",
+                 "EKY_06_D_ramosissima",
+                 "WVA_01_D_ramosissima",
+                 "WVA_03_D_ramosissima"]
+    ramo_clade = clade(ramo_taxa, age=2.0)
     
     # load the constraints into a vector for the BDP model
-    constraints = [outgroup_clade, ingroup_clade]
+    constraints = [ingroup_clade, ramo_clade]
 
 }
 
@@ -181,12 +181,14 @@ diversification_mean <- ln( ln(n_species/2.0) / expected_tree_age )
 diversification_sd <- 0.587405 * 2
 diversification ~ dnLognormal(mean=diversification_mean, sd=diversification_sd)
 diversification.setValue(0.9)
+moves[++mi] = mvScale(diversification, lambda=0.1, tune=true, weight=10.0)
 moves[++mi] = mvScale(diversification, lambda=1.0, tune=true, weight=10.0)
 
 extinction_mean <- ln( ln(n_species/2.0) / expected_tree_age )
 extinction_sd <- 0.587405 * 2
 extinction ~ dnLognormal(mean=extinction_mean, sd=extinction_sd)
 extinction.setValue(0.26)
+moves[++mi] = mvScale(extinction, lambda=0.1, tune=true, weight=10.0)
 moves[++mi] = mvScale(extinction, lambda=1.0, tune=true, weight=10.0)
 
 # diversification = speciation - extinction
@@ -204,12 +206,15 @@ speciation := diversification + extinction
 # 3740 - 132 = 3608
 # rho = 38 / 3608 = 0.012
 
+# the number of species in Draba sensu lato is ~370 (Jordon-Thaden et al. 2010)
+# rho ~ 38 / 370 ~ 0.1 
+
 # the time tree is a stochastic node modeled by the constant rate birth-death process 
 if (use_constraints) {
-    bdp = dnBDP(lambda=speciation, mu=extinction, rho=0.012, rootAge=abs(root_time), taxa=taxa)
+    bdp = dnBDP(lambda=speciation, mu=extinction, rho=0.1, rootAge=abs(root_time), taxa=taxa)
     timetree ~ dnConstrainedTopology(treeDistribution=bdp, constraints)
 } else {
-    timetree ~ dnBDP(lambda=speciation, mu=extinction, rho=0.012, rootAge=abs(root_time), taxa=taxa)
+    timetree ~ dnBDP(lambda=speciation, mu=extinction, rho=0.1, rootAge=abs(root_time), taxa=taxa)
 }
 
 # add moves on the tree node times
@@ -225,24 +230,35 @@ moves[++mi] = mvFNPR(timetree, weight=30)
 moves[++mi] = mvGPR(timetree, weight=30)
 
 if (use_constraints) {
-    outgroup_age := tmrca(timetree, outgroup_clade)
-    ingroup_age := tmrca(timetree, ingroup_clade)
+
+    # crown age of Draba 3.48 - 10.0 Ma Karl and Koch 2013
+    draba_crown_age := tmrca(timetree, ingroup_clade)
+    draba_max <- 10.0
+    draba_min <- 3.48
+    draba_width <- (draba_max - draba_min)/2.0
+    draba_mean <- draba_min + draba_width
+    draba_empirical_age ~ dnUniform(draba_crown_age - draba_width, draba_crown_age + draba_width)
+    draba_empirical_age.clamp( draba_mean )
+
+    ramo_crown_age := tmrca(timetree, ramo_clade, stemAge=false)
+    ramo_stem_age := tmrca(timetree, ramo_clade, stemAge=true)
 }
 
 # UCLN model on branch rates
 
-NUM_RATE_CATEGORIES = 10
+NUM_RATE_CATEGORIES = 20
 
 ucln_mean ~ dnUnif(1E-6, 10)
-ucln_mean.setValue(0.015)
+ucln_mean.setValue(0.1)
 ucln_log_mean := ln( ucln_mean )
 ucln_sigma <- 0.587405 * 2
 
+moves[++mi] = mvScale(ucln_mean, lambda=0.01, weight=5.0)
+moves[++mi] = mvScale(ucln_mean, lambda=0.1, weight=10.0)
 moves[++mi] = mvScale(ucln_mean, lambda=0.5, weight=5.0)
-moves[++mi] = mvScale(ucln_mean, lambda=1.0, weight=10.0)
-moves[++mi] = mvScale(ucln_mean, lambda=5.0, weight=5.0)
+moves[++mi] = mvScale(ucln_mean, lambda=1.0, weight=5.0)
 
-up_down_scale_tree = mvUpDownScale(lambda=1.0, weight=20)
+up_down_scale_tree = mvUpDownScale(lambda=1.0, weight=10)
 up_down_scale_tree.addVariable( timetree, TRUE )
 up_down_scale_tree.addVariable( root_time, TRUE )
 up_down_scale_tree.addVariable( ucln_mean, FALSE )
@@ -267,7 +283,8 @@ mean_rt := mean(branch_rates)
 br_prior <- rep(1, n_partitions)
 br ~ dnDirichlet(br_prior)
 moves[++mi] = mvSimplexElementScale(br, alpha=0.1, weight=5)
-moves[++mi] = mvSimplexElementScale(br, alpha=1.0, weight=5)
+moves[++mi] = mvSimplexElementScale(br, alpha=0.5, weight=5)
+moves[++mi] = mvElementSwapSimplex(br, weight=10)
 
 for (i in 1:n_partitions) {
 
@@ -286,7 +303,7 @@ mymodel = model(timetree)
 
 ### set up the monitors that will output parameter values to file and screen
 monitors[1] = mnFile(filename=base_dir + "output/" + run_num + ".trees", printgen=sample_freq, timetree)
-monitors[2] = mnScreen(printgen=1, root_time, mean_rt, extinction, speciation) #, outgroup_age, ingroup_age)
+monitors[2] = mnScreen(printgen=1, root_time, mean_rt, extinction, speciation) 
 monitors[3] = mnModel(filename=base_dir + "output/" + run_num + ".log", printgen=sample_freq)
 
 ### workspace mcmc ###
