@@ -249,13 +249,13 @@ if (use_constraints) {
 NUM_RATE_CATEGORIES = 20
 
 ucln_mean ~ dnUnif(1E-6, 10)
-ucln_mean.setValue(0.1)
+ucln_mean.setValue(0.15)
 ucln_log_mean := ln( ucln_mean )
 ucln_sigma <- 0.587405 * 2
 
 moves[++mi] = mvScale(ucln_mean, lambda=0.01, weight=5.0)
 moves[++mi] = mvScale(ucln_mean, lambda=0.1, weight=10.0)
-moves[++mi] = mvScale(ucln_mean, lambda=0.5, weight=5.0)
+moves[++mi] = mvScale(ucln_mean, lambda=0.5, weight=20.0)
 moves[++mi] = mvScale(ucln_mean, lambda=1.0, weight=5.0)
 
 up_down_scale_tree = mvUpDownScale(lambda=1.0, weight=10)
@@ -266,6 +266,7 @@ up_down_scale_tree.addVariable( diversification, FALSE )
 up_down_scale_tree.addVariable( extinction, FALSE )
 moves[++mi] = up_down_scale_tree
 
+
 # use a discretized lognormal
 rate_categories := fnDiscretizeDistribution(dnLnorm(ucln_log_mean, ucln_sigma), NUM_RATE_CATEGORIES)
 rate_probs <- simplex(rep(1, NUM_RATE_CATEGORIES))
@@ -273,7 +274,9 @@ for (j in 1:n_branches) {
 
     # for each branch pull from one of the rate categories
     branch_rates[j] ~ dnMixture(rate_categories, rate_probs)
-    moves[++mi] = mvMixtureAllocation(branch_rates[j], weight=4.0)
+    moves[++mi] = mvMixtureAllocation(branch_rates[j], delta=1, weight=4.0)
+    moves[++mi] = mvMixtureAllocation(branch_rates[j], delta=2, weight=4.0)
+    moves[++mi] = mvMixtureAllocation(branch_rates[j], delta=5, weight=4.0)
 
 }
 
