@@ -194,6 +194,11 @@ moves[++mi] = mvScale(extinction, lambda=1.0, tune=true, weight=10.0)
 # diversification = speciation - extinction
 speciation := diversification + extinction
 
+up_down_scale_d = mvUpDownScale(lambda=1.0, weight=10)
+up_down_scale_d.addVariable( diversification, TRUE )
+up_down_scale_d.addVariable( extinction, FALSE )
+moves[++mi] = up_down_scale_d
+
 # the probability of sampling species at the present:
 
 # the number of species in Brassicaceae is 3740
@@ -246,9 +251,10 @@ if (use_constraints) {
 
 # UCLN model on branch rates
 
-NUM_RATE_CATEGORIES = 20
+NUM_RATE_CATEGORIES = 5
 
-ucln_mean ~ dnUnif(1E-6, 10)
+#ucln_mean ~ dnUnif(1E-6, 10)
+ucln_mean ~ dnExponential(20)
 ucln_mean.setValue(0.15)
 ucln_log_mean := ln( ucln_mean )
 ucln_sigma <- 0.587405 * 2
