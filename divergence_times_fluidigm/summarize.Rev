@@ -11,4 +11,8 @@ prefix = ""
 #prefix = "chloroplast"
 #prefix = "nucleartest"
 trace = readTreeTrace(file="output/combined" + prefix + ".trees", burnin=0.0)
-mapTree(trace=trace, file="output/map" + prefix + ".tree")
+#mapTree(trace=trace, file="output/map" + prefix + ".tree")
+
+t = mapTree(trace=trace, file="output/map" + prefix + ".tree")
+t.collapseNegativeBranches()
+writeNexus(t, "output/map_collapsed.tree")
