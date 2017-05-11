@@ -251,7 +251,7 @@ if (use_constraints) {
 
 # UCLN model on branch rates
 
-NUM_RATE_CATEGORIES = 5
+NUM_RATE_CATEGORIES = 50
 
 #ucln_mean ~ dnUnif(1E-6, 10)
 ucln_mean ~ dnExponential(20)
@@ -281,8 +281,8 @@ for (j in 1:n_branches) {
     # for each branch pull from one of the rate categories
     branch_rates[j] ~ dnMixture(rate_categories, rate_probs)
     moves[++mi] = mvMixtureAllocation(branch_rates[j], delta=1, weight=4.0)
-    moves[++mi] = mvMixtureAllocation(branch_rates[j], delta=2, weight=4.0)
-    moves[++mi] = mvMixtureAllocation(branch_rates[j], delta=5, weight=4.0)
+    moves[++mi] = mvMixtureAllocation(branch_rates[j], delta=3, weight=4.0)
+    moves[++mi] = mvMixtureAllocation(branch_rates[j], delta=10, weight=4.0)
 
 }
 
