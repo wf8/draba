@@ -1,9 +1,3 @@
-GENERAL-INFO-START
-
-	seq-file            /global/scratch/freyman/projects/draba/gphocs/ramos_filtered4.gphocs
-	trace-file         	/global/scratch/freyman/projects/draba/gphocs/output/replicate.log				
-	locus-mut-rate      VAR 1.0
-	random-seed			71916
 
 	mcmc-iterations	  	500000
 	burn-in				50000
